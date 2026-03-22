@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportMap Olsztyn — Geoportal Sportowy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --panel: #13161e;
+    --panel2: #1a1e28;
+    --border: #252a38;
+    --accent: #e8ff47;
+    --accent2: #47c8ff;
+    --text: #eef0f5;
+    --muted: #7a8099;
+    --card: #1e2330;
+    --shadow: 0 4px 32px rgba(0,0,0,0.5);
+
+    --cat-stadion: #ff6b47;
+    --cat-hala: #47c8ff;
+    --cat-basen: #47ffe8;
+    --cat-silownia: #e8ff47;
+    --cat-kort: #c847ff;
+    --cat-boisko: #47ff8a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ─────────────────────────────────── */
+  #topbar {
+    height: 56px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    z-index: 1000;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .logo span { color: var(--text); }
+
+  #search-wrap {
+    flex: 1;
+    max-width: 380px;
+    position: relative;
+  }
+  #search {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px 8px 36px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #search:focus { border-color: var(--accent); }
+  #search::placeholder { color: var(--muted); }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  #topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-icon {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    padding: 7px 11px;
+    font-size: 15px;
+    transition: background .2s, border-color .2s;
+  }
+  .btn-icon:hover { background: var(--border); border-color: var(--accent); }
+
+  #count-badge {
+    background: var(--accent);
+    color: #0d0f14;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: .5px;
+  }
+
+  /* ── MAIN LAYOUT ──────────────────────────────── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ──────────────────────────────────── */
+  #sidebar {
+    width: 320px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    z-index: 500;
+    transition: width .3s ease;
+  }
+  #sidebar.collapsed { width: 0; overflow: hidden; }
+
+  #filters {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .filter-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all .15s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .chip.active { color: #0d0f14 !important; }
+  .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .chip[data-cat="wszystkie"] { border-color: var(--muted); color: var(--muted); }
+  .chip[data-cat="wszystkie"].active { background: var(--text); border-color: var(--text); color: #0d0f14; }
+  .chip[data-cat="stadion"] { border-color: var(--cat-stadion); color: var(--cat-stadion); }
+  .chip[data-cat="stadion"].active { background: var(--cat-stadion); }
+  .chip[data-cat="hala"] { border-color: var(--cat-hala); color: var(--cat-hala); }
+  .chip[data-cat="hala"].active { background: var(--cat-hala); }
+  .chip[data-cat="basen"] { border-color: var(--cat-basen); color: var(--cat-basen); }
+  .chip[data-cat="basen"].active { background: var(--cat-basen); }
+  .chip[data-cat="silownia"] { border-color: var(--cat-silownia); color: var(--cat-silownia); }
+  .chip[data-cat="silownia"].active { background: var(--cat-silownia); }
+  .chip[data-cat="kort"] { border-color: var(--cat-kort); color: var(--cat-kort); }
+  .chip[data-cat="kort"].active { background: var(--cat-kort); }
+  .chip[data-cat="boisko"] { border-color: var(--cat-boisko); color: var(--cat-boisko); }
+  .chip[data-cat="boisko"].active { background: var(--cat-boisko); }
+
+  #list-header {
+    padding: 12px 16px 8px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  #place-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px 8px;
+  }
+  #place-list::-webkit-scrollbar { width: 4px; }
+  #place-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .place-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .place-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 10px 0 0 10px;
+  }
+  .place-card[data-cat="stadion"]::before { background: var(--cat-stadion); }
+  .place-card[data-cat="hala"]::before { background: var(--cat-hala); }
+  .place-card[data-cat="basen"]::before { background: var(--cat-basen); }
+  .place-card[data-cat="silownia"]::before { background: var(--cat-silownia); }
+  .place-card[data-cat="kort"]::before { background: var(--cat-kort); }
+  .place-card[data-cat="boisko"]::before { background: var(--cat-boisko); }
+
+  .place-card:hover, .place-card.active {
+    border-color: var(--accent);
+    background: var(--panel2);
+  }
+  .place-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: var(--text);
+  }
+  .place-addr {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .place-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .cat-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .rating-tag {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .rating-tag .star { color: #ffd147; }
+
+  /* ── MAP ─────────────────────────────────────── */
+  #map {
+    flex: 1;
+    z-index: 0;
+  }
+
+  /* ── POPUP DETAIL PANEL ───────────────────────── */
+  #detail-panel {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    width: 300px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    z-index: 800;
+    display: none;
+    box-shadow: var(--shadow);
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+  #detail-panel.open { display: block; }
+
+  .detail-close {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--panel2);
+    border: none;
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 14px;
+    transition: color .15s;
+  }
+  .detail-close:hover { color: var(--text); }
+
+  .detail-cat {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .detail-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+  .detail-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .detail-row .icon { flex-shrink: 0; width: 16px; text-align: center; margin-top: 1px; }
+  .detail-row a { color: var(--accent2); text-decoration: none; }
+  .detail-row a:hover { text-decoration: underline; }
+
+  .detail-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  .detail-hours {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .detail-hours summary {
+    cursor: pointer;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    list-style: none;
+  }
+  .detail-hours summary::marker { display: none; }
+  .hours-list {
+    margin-top: 6px;
+    padding-left: 4px;
+  }
+  .hours-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .hours-list li:last-child { border-bottom: none; }
+  .hours-list .today { color: var(--accent); font-weight: 600; }
+
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .btn-detail {
+    flex: 1;
+    padding: 9px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity .15s;
+  }
+  .btn-detail:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #0d0f14; }
+  .btn-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── LEAFLET OVERRIDES ───────────────────────── */
+  .leaflet-container { background: #0d0f14; }
+  .leaflet-popup-content-wrapper {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    box-shadow: var(--shadow);
+  }
+  .leaflet-popup-tip { background: var(--panel); }
+  .leaflet-popup-content { margin: 10px 14px; font-size: 13px; min-width: 160px; }
+  .leaflet-popup-content b { color: var(--accent); }
+  .leaflet-control-zoom {
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+    box-shadow: var(--shadow) !important;
+  }
+  .leaflet-control-zoom a {
+    background: var(--panel) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+    font-size: 16px !important;
+  }
+  .leaflet-control-zoom a:hover { background: var(--panel2) !important; }
+  .leaflet-attribution-flag { display: none !important; }
+  .leaflet-control-attribution {
+    background: rgba(13,15,20,.8) !important;
+    color: var(--muted) !important;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: var(--muted) !important; }
+
+  /* custom marker */
+  .map-marker {
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid rgba(0,0,0,.4);
+    transition: transform .15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.5);
+  }
+  .map-marker-inner {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .map-marker:hover { transform: rotate(-45deg) scale(1.2); }
+
+  /* ── MOBILE ──────────────────────────────────── */
+  @media (max-width: 700px) {
+    #sidebar { position: absolute; left: 0; top: 56px; bottom: 0; width: 100%; z-index: 600; }
+    #sidebar.collapsed { width: 0; }
+    #detail-panel { left: 12px; right: 12px; width: auto; bottom: 12px; }
+  }
+
+  /* ── TOOLTIP ──────────────────────────────────── */
+  .no-results {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .no-results span { font-size: 28px; display: block; margin-bottom: 8px; }
+
+  /* ── LEGEND ───────────────────────────────────── */
+  #legend {
+    position: absolute;
+    top: 70px;
+    right: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    z-index: 700;
+    font-size: 11px;
+    box-shadow: var(--shadow);
+  }
+  .legend-title {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+    color: var(--muted);
+  }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── LAYER SWITCHER ───────────────────────────── */
+  #layer-switcher {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 700;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 4px;
+    display: flex;
+    gap: 2px;
+    box-shadow: var(--shadow);
+  }
+  .layer-btn {
+    padding: 6px 12px;
+    border-radius: 24px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .layer-btn.active {
+    background: var(--accent);
+    color: #0d0f14;
+    font-weight: 600;
+  }
+  .layer-btn:not(.active):hover {
+    color: var(--text);
+    background: var(--panel2);
+  }
+
+  /* ── GEOPORTAL BADGE ──────────────────────────── */
+  #geoportal-badge {
+    position: absolute;
+    bottom: 32px;
+    right: 16px;
+    z-index: 700;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 10px;
+    color: var(--muted);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity .3s;
+  }
+  #geoportal-badge a { color: var(--accent2); text-decoration: none; }
+  #geoportal-badge a:hover { text-decoration: underline; }
+  #geoportal-badge.hidden { opacity: 0; pointer-events: none; }
+
+  /* ── LOADING OVERLAY ─────────────────────────── */
+  #loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .4s;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="logo">Sport<span>Map</span> <span style="color:var(--muted);font-size:14px;letter-spacing:1px;">OLSZTYN</span></div>
+  <div id="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="search" type="text" placeholder="Szukaj obiektu, adresu…" autocomplete="off">
+  </div>
+  <div id="topbar-right">
+    <span id="count-badge">— obiektów</span>
+    <button class="btn-icon" id="toggle-sidebar" title="Panel boczny">☰</button>
+    <button class="btn-icon" id="locate-me" title="Moja lokalizacja">⊕</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay">
+    <div style="text-align:center">
+      <div class="spinner"></div>
+      <div style="margin-top:12px;font-size:13px;color:#7a8099">Łączenie z bazą danych…</div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="filters">
+      <div class="filter-label">Filtruj kategorie</div>
+      <div class="filter-chips">
+        <div class="chip active" data-cat="wszystkie">Wszystkie</div>
+        <div class="chip" data-cat="stadion"><span class="chip-dot" style="background:var(--cat-stadion)"></span>Stadiony</div>
+        <div class="chip" data-cat="hala"><span class="chip-dot" style="background:var(--cat-hala)"></span>Hale</div>
+        <div class="chip" data-cat="basen"><span class="chip-dot" style="background:var(--cat-basen)"></span>Baseny</div>
+        <div class="chip" data-cat="silownia"><span class="chip-dot" style="background:var(--cat-silownia)"></span>Siłownie</div>
+        <div class="chip" data-cat="kort"><span class="chip-dot" style="background:var(--cat-kort)"></span>Korty</div>
+        <div class="chip" data-cat="boisko"><span class="chip-dot" style="background:var(--cat-boisko)"></span>Boiska</div>
+      </div>
+    </div>
+    <div id="list-header">Lista obiektów</div>
+    <div id="place-list"></div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+  <!-- LAYER SWITCHER -->
+  <div id="layer-switcher">
+    <button class="layer-btn active" data-layer="dark" title="Ciemna mapa wektorowa">🌑 Mapa</button>
+    <button class="layer-btn" data-layer="orto" title="Ortofotomapa GUGiK (standardowa rozdzielczość)">🛰️ Orto</button>
+    <button class="layer-btn" data-layer="ortohr" title="Ortofotomapa GUGiK (wysoka rozdzielczość)">🔭 Orto HD</button>
+    <button class="layer-btn" data-layer="hybrid" title="Ortofotomapa HD + etykiety OSM">🗺️ Hybryda</button>
+  </div>
+
+  <!-- GEOPORTAL BADGE (widoczny przy warstwach orto) -->
+  <div id="geoportal-badge" class="hidden">
+    <span>🛰️</span>
+    <span>Ortofotomapa: <a href="https://www.geoportal.gov.pl/" target="_blank">GUGiK Geoportal</a></span>
+  </div>
+
+  <!-- LEGEND -->
+  <div id="legend">
+    <div class="legend-title">Legenda</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat-stadion)"></div>Stadiony</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat-hala)"></div>Hale sportowe</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat-basen)"></div>Baseny</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat-silownia)"></div>Siłownie/Fitness</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat-kort)"></div>Korty tenisowe</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cat-boisko)"></div>Boiska</div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div id="detail-panel">
+    <button class="detail-close" id="close-detail">✕</button>
+    <div class="detail-cat" id="d-cat"></div>
+    <div class="detail-name" id="d-name"></div>
+    <div class="detail-row"><span class="icon">📍</span><span id="d-addr"></span></div>
+    <div class="detail-row" id="d-phone-row"><span class="icon">📞</span><a id="d-phone" href=""></a></div>
+    <div class="detail-row" id="d-web-row"><span class="icon">🌐</span><a id="d-web" href="" target="_blank"></a></div>
+    <hr class="detail-divider">
+    <details class="detail-hours" id="d-hours-details">
+      <summary>🕐 <span>Godziny otwarcia</span></summary>
+      <ul class="hours-list" id="d-hours-list"></ul>
+    </details>
+    <div class="detail-row" id="d-rating-row" style="margin-top:8px">
+      <span class="icon">⭐</span><span id="d-rating"></span>
+    </div>
+    <div class="detail-actions">
+      <button class="btn-detail btn-primary" id="d-maps">Google Maps</button>
+      <button class="btn-detail btn-secondary" id="d-navigate">Nawiguj</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ═══════════════════════════════════════════════════
+// KONFIGURACJA SUPABASE
+// Wpisz swoje dane z: supabase.com → Settings → API
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL = 'https://qgpnzwarcpwhavwpubgq.supabase.co';   // np. https://abcxyz.supabase.co
+const SUPABASE_KEY = 'sb_publishable_M4sTE6MprLFxKVrKFiHF6A_T2n1hhrs';       // anon / public key
+
+// ═══════════════════════════════════════════════════
+// MAPOWANIE EMOJI DLA KATEGORII
+// ═══════════════════════════════════════════════════
+const CAT_EMOJI = {
+  stadion:  '🏟️',
+  hala:     '🏀',
+  basen:    '🏊',
+  silownia: '💪',
+  kort:     '🎾',
+  boisko:   '⚽'
+};
+
+// ═══════════════════════════════════════════════════
+// GLOBALNY STAN — wypełniany po fetch
+// ═══════════════════════════════════════════════════
+let PLACES = []
+
+// ═══════════════════════════════════════════════════
+// KONFIGURACJA KATEGORII
+// ═══════════════════════════════════════════════════
+const CAT_CONFIG = {
+  stadion:  { color: "#ff6b47", label: "Stadion" },
+  hala:     { color: "#47c8ff", label: "Hala sportowa" },
+  basen:    { color: "#47ffe8", label: "Basen / Pływalnia" },
+  silownia: { color: "#e8ff47", label: "Siłownia / Fitness" },
+  kort:     { color: "#c847ff", label: "Kort tenisowy" },
+  boisko:   { color: "#47ff8a", label: "Boisko" }
+};
+
+// ═══════════════════════════════════════════════════
+// INICJALIZACJA MAPY
+// ═══════════════════════════════════════════════════
+const map = L.map('map', {
+  center: [53.770, 20.480],
+  zoom: 13,
+  zoomControl: true
+});
+
+// ═══════════════════════════════════════════════════
+// WARSTWY PODKŁADOWE
+// ═══════════════════════════════════════════════════
+
+// Warstwa ciemna CartoDB
+const layerDark = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }
+);
+
+// Ortofotomapa GUGiK — WMS StandardResolution (EPSG:3857, bez klucza)
+const layerOrto = L.tileLayer.wms(
+  'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution',
+  {
+    layers: 'Raster',
+    format: 'image/jpeg',
+    transparent: false,
+    version: '1.3.0',
+    crs: L.CRS.EPSG3857,
+    attribution: '© <a href="https://www.geoportal.gov.pl/" target="_blank">GUGiK — Geoportal.gov.pl</a>',
+    maxZoom: 22,
+    tileSize: 512
+  }
+);
+
+// Ortofotomapa wysokiej rozdzielczości GUGiK
+const layerOrtoHR = L.tileLayer.wms(
+  'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/HighResolution',
+  {
+    layers: 'Raster',
+    format: 'image/jpeg',
+    transparent: false,
+    version: '1.3.0',
+    crs: L.CRS.EPSG3857,
+    attribution: '© <a href="https://www.geoportal.gov.pl/" target="_blank">GUGiK — Geoportal.gov.pl (High Res)</a>',
+    maxZoom: 22,
+    tileSize: 512
+  }
+);
+
+// Etykiety OSM na wierzch (do hybrydy)
+const layerLabels = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+  {
+    subdomains: 'abcd',
+    maxZoom: 20,
+    opacity: 0.85,
+    attribution: '© <a href="https://carto.com/">CARTO</a>'
+  }
+);
+
+// Aktywna warstwa bazowa + flaga hybrydy
+let activeBase = layerDark;
+let hybridOn   = false;
+layerDark.addTo(map);
+
+function switchLayer(name) {
+  [layerDark, layerOrto, layerOrtoHR].forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+  if (map.hasLayer(layerLabels)) map.removeLayer(layerLabels);
+  hybridOn = false;
+
+  if (name === 'dark') {
+    layerDark.addTo(map);
+    activeBase = layerDark;
+  } else if (name === 'orto') {
+    layerOrto.addTo(map);
+    activeBase = layerOrto;
+  } else if (name === 'ortohr') {
+    layerOrtoHR.addTo(map);
+    activeBase = layerOrtoHR;
+  } else if (name === 'hybrid') {
+    layerOrtoHR.addTo(map);
+    layerLabels.addTo(map);
+    activeBase = layerOrtoHR;
+    hybridOn = true;
+  }
+}
+
+// Obsługa przycisków przełącznika
+const geoportalBadge = document.getElementById('geoportal-badge');
+document.querySelectorAll('.layer-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.layer-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    switchLayer(btn.dataset.layer);
+    // Pokaż badge geoportalu przy warstwach orto
+    const isOrto = ['orto','ortohr','hybrid'].includes(btn.dataset.layer);
+    geoportalBadge.classList.toggle('hidden', !isOrto);
+  });
+});
+
+// ═══════════════════════════════════════════════════
+// MARKERY
+// ═══════════════════════════════════════════════════
+function makeIcon(cat) {
+  const color = CAT_CONFIG[cat]?.color || "#fff";
+  const emoji = CAT_EMOJI[cat] || "📍";
+  const size = 32;
+  const html = `<div class="map-marker" style="width:${size}px;height:${size}px;background:${color};">
+    <span class="map-marker-inner" style="font-size:14px;">${emoji}</span>
+  </div>`;
+  return L.divIcon({ html, className: '', iconSize: [size,size], iconAnchor: [size/2, size], popupAnchor: [0, -size] });
+}
+
+const markers = {};
+
+function addMarker(p) {
+  const icon = makeIcon(p.cat);
+  const m = L.marker([p.lat, p.lng], { icon })
+    .addTo(map)
+    .bindPopup(`<b>${p.name}</b><br><span style="color:#7a8099;font-size:11px">${p.addr}</span>`);
+  m.on('click', () => openDetail(p));
+  markers[p.id] = m;
+}
+
+function clearMarkers() {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  for (const k in markers) delete markers[k];
+}
+
+// ═══════════════════════════════════════════════════
+// PANEL SZCZEGÓŁÓW
+// ═══════════════════════════════════════════════════
+const DAYS = ["Niedziela","Poniedziałek","Wtorek","Środa","Czwartek","Piątek","Sobota"];
+let currentPlace = null;
+
+function openDetail(p) {
+  currentPlace = p;
+  const cfg = CAT_CONFIG[p.cat];
+
+  document.getElementById('d-cat').textContent = cfg.label;
+  document.getElementById('d-cat').style.color = cfg.color;
+  document.getElementById('d-name').textContent = p.name;
+  document.getElementById('d-addr').textContent = p.addr;
+
+  const phoneRow = document.getElementById('d-phone-row');
+  if (p.phone) {
+    document.getElementById('d-phone').textContent = p.phone;
+    document.getElementById('d-phone').href = "tel:" + p.phone.replace(/\s/g,'');
+    phoneRow.style.display = '';
+  } else { phoneRow.style.display = 'none'; }
+
+  const webRow = document.getElementById('d-web-row');
+  if (p.web) {
+    const domain = new URL(p.web).hostname.replace('www.','');
+    document.getElementById('d-web').textContent = domain;
+    document.getElementById('d-web').href = p.web;
+    webRow.style.display = '';
+  } else { webRow.style.display = 'none'; }
+
+  // hours — obsługa zarówno tablicy jak i stringa JSON z Supabase
+  const hoursList = document.getElementById('d-hours-list');
+  const todayIdx = new Date().getDay();
+  hoursList.innerHTML = '';
+  let hoursData = p.hours || [];
+  if (typeof hoursData === 'string') {
+    try { hoursData = JSON.parse(hoursData); } catch(e) { hoursData = []; }
+  }
+  if (hoursData.length === 0) {
+    document.getElementById('d-hours-details').style.display = 'none';
+  } else {
+    document.getElementById('d-hours-details').style.display = '';
+    hoursData.forEach(h => {
+      const li = document.createElement('li');
+      const dayName = h[0]; const dayHours = h[1];
+      const isToday = DAYS[todayIdx] === dayName;
+      li.innerHTML = `<span class="${isToday?'today':''}">${dayName}</span><span class="${isToday?'today':''}">${dayHours}</span>`;
+      hoursList.appendChild(li);
+    });
+  }
+
+  // rating
+  const ratingRow = document.getElementById('d-rating-row');
+  if (p.rating) {
+    const cnt = p.rating_count || p.ratingCount || '';
+    document.getElementById('d-rating').innerHTML =
+      `<span class="star">★</span> ${parseFloat(p.rating).toFixed(1)}` +
+      (cnt ? ` <span style="color:#3a4060">(${cnt} opinii)</span>` : '');
+    ratingRow.style.display = '';
+  } else {
+    ratingRow.style.display = 'none';
+  }
+
+  // maps buttons
+  document.getElementById('d-maps').onclick = () => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name+' '+p.addr)}`, '_blank');
+  };
+  document.getElementById('d-navigate').onclick = () => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`, '_blank');
+  };
+
+  document.getElementById('detail-panel').classList.add('open');
+
+  // highlight card
+  document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector(`.place-card[data-id="${p.id}"]`);
+  if (card) {
+    card.classList.add('active');
+    card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  map.setView([p.lat, p.lng], 15, { animate: true });
+}
+
+document.getElementById('close-detail').onclick = () => {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
+  currentPlace = null;
+};
+
+// ═══════════════════════════════════════════════════
+// FILTROWANIE + WYSZUKIWANIE
+// ═══════════════════════════════════════════════════
+let activeFilter = "wszystkie";
+let searchQuery = "";
+
+function filterPlaces() {
+  return PLACES.filter(p => {
+    const catOk = activeFilter === "wszystkie" || p.cat === activeFilter;
+    const q = searchQuery.toLowerCase();
+    const searchOk = !q ||
+      (p.name||'').toLowerCase().includes(q) ||
+      (p.addr||p.adres||'').toLowerCase().includes(q) ||
+      (p.desc||p.opis||'').toLowerCase().includes(q);
+    return catOk && searchOk;
+  });
+}
+
+function renderList() {
+  const filtered = filterPlaces();
+  const list = document.getElementById('place-list');
+  list.innerHTML = '';
+
+  document.getElementById('count-badge').textContent = filtered.length + ' obiektów';
+
+  // show/hide markers
+  PLACES.forEach(p => {
+    const m = markers[p.id];
+    if (!m) return;
+    const visible = filtered.find(f => f.id === p.id);
+    if (visible) { if (!map.hasLayer(m)) m.addTo(map); }
+    else         { if (map.hasLayer(m))  map.removeLayer(m); }
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-results"><span>🔍</span>Brak wyników dla podanych kryteriów</div>';
+    return;
+  }
+
+  filtered.forEach(p => {
+    const cfg = CAT_CONFIG[p.cat] || { color: '#aaa', label: p.cat };
+    const emoji = CAT_EMOJI[p.cat] || '📍';
+    const addr = p.addr || p.adres || '';
+    const card = document.createElement('div');
+    card.className = 'place-card';
+    card.dataset.id = p.id;
+    card.dataset.cat = p.cat;
+    const stars = p.rating ? `<span class="rating-tag"><span class="star">★</span> ${parseFloat(p.rating).toFixed(1)}</span>` : '';
+    card.innerHTML = `
+      <div class="place-name">${emoji} ${p.name}</div>
+      <div class="place-addr">${addr}</div>
+      <div class="place-meta">
+        <span class="cat-tag" style="background:${cfg.color}22;color:${cfg.color}">${cfg.label}</span>
+        ${stars}
+      </div>`;
+    card.onclick = () => openDetail(p);
+    list.appendChild(card);
+  });
+}
+
+// chips
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter = chip.dataset.cat;
+    renderList();
+  });
+});
+
+// search
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderList();
+});
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR TOGGLE
+// ═══════════════════════════════════════════════════
+document.getElementById('toggle-sidebar').onclick = () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  setTimeout(() => map.invalidateSize(), 320);
+};
+
+// ═══════════════════════════════════════════════════
+// GEOLOKALIZACJA
+// ═══════════════════════════════════════════════════
+let userMarker = null;
+document.getElementById('locate-me').onclick = () => {
+  if (!navigator.geolocation) { alert("Przeglądarka nie obsługuje geolokalizacji."); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    if (userMarker) map.removeLayer(userMarker);
+    userMarker = L.circleMarker([lat, lng], {
+      radius: 10, color: '#e8ff47', fillColor: '#e8ff47',
+      fillOpacity: 0.3, weight: 3
+    }).addTo(map).bindPopup("📍 Twoja lokalizacja").openPopup();
+    map.setView([lat, lng], 14, { animate: true });
+  }, () => alert("Nie udało się pobrać lokalizacji."));
+};
+
+// ═══════════════════════════════════════════════════
+// SUPABASE — normalizacja wiersza z bazy
+// Mapuje nazwy kolumn Supabase → format używany w geoportalu
+// ═══════════════════════════════════════════════════
+function normalizeRow(row) {
+  return {
+    id:          row.id,
+    cat:         row.kategoria || row.cat || 'boisko',
+    name:        row.nazwa     || row.name || '(brak nazwy)',
+    addr:        row.adres     || row.addr || '',
+    lat:         parseFloat(row.lat),
+    lng:         parseFloat(row.lng),
+    phone:       row.telefon   || row.phone || null,
+    web:         row.strona_www|| row.web   || null,
+    hours:       row.godziny   || row.hours || [],
+    rating:      row.ocena     || row.rating|| null,
+    rating_count:row.liczba_ocen||row.rating_count||null,
+    desc:        row.opis      || row.desc  || ''
+  };
+}
+
+// ═══════════════════════════════════════════════════
+// SUPABASE — pobieranie danych
+// ═══════════════════════════════════════════════════
+async function loadFromSupabase() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/miejsca?select=*&order=nazwa.asc`,
+    {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  if (!res.ok) throw new Error(`Supabase HTTP ${res.status}: ${await res.text()}`);
+  return (await res.json()).map(normalizeRow);
+}
+
+// ═══════════════════════════════════════════════════
+// INIT — ładowanie danych i uruchomienie mapy
+// ═══════════════════════════════════════════════════
+async function init() {
+  const loadingEl = document.getElementById('loading-overlay');
+
+  // Sprawdź czy klucze są ustawione
+  if (SUPABASE_URL.startsWith('WPISZ') || SUPABASE_KEY.startsWith('WPISZ')) {
+    loadingEl.innerHTML = `
+      <div style="text-align:center;padding:24px;max-width:340px">
+        <div style="font-size:32px;margin-bottom:12px">⚙️</div>
+        <div style="font-size:15px;font-weight:600;color:#e8ff47;margin-bottom:8px">Skonfiguruj Supabase</div>
+        <div style="font-size:12px;color:#7a8099;line-height:1.6">
+          Otwórz plik HTML w edytorze i wpisz swoje dane:<br><br>
+          <code style="background:#1a1e28;padding:4px 8px;border-radius:4px;color:#47c8ff">SUPABASE_URL</code><br>
+          <code style="background:#1a1e28;padding:4px 8px;border-radius:4px;color:#47c8ff">SUPABASE_KEY</code><br><br>
+          Znajdziesz je w panelu Supabase:<br>
+          <b style="color:#eef0f5">Settings → API</b>
+        </div>
+      </div>`;
+    return;
+  }
+
+  try {
+    loadingEl.innerHTML = `<div style="text-align:center"><div class="spinner"></div><div style="margin-top:12px;font-size:13px;color:#7a8099">Ładowanie danych z Supabase…</div></div>`;
+
+    PLACES = await loadFromSupabase();
+
+    // Dodaj markery
+    clearMarkers();
+    PLACES.forEach(addMarker);
+    renderList();
+
+    // Ukryj overlay
+    loadingEl.style.opacity = '0';
+    setTimeout(() => loadingEl.style.display = 'none', 400);
+
+  } catch (err) {
+    console.error('Błąd Supabase:', err);
+    loadingEl.innerHTML = `
+      <div style="text-align:center;padding:24px;max-width:340px">
+        <div style="font-size:32px;margin-bottom:12px">❌</div>
+        <div style="font-size:14px;font-weight:600;color:#ff6b47;margin-bottom:8px">Błąd połączenia z bazą danych</div>
+        <div style="font-size:12px;color:#7a8099;line-height:1.6;margin-bottom:16px">${err.message}</div>
+        <button onclick="init()" style="background:#e8ff47;color:#0d0f14;border:none;border-radius:8px;padding:8px 20px;font-weight:600;cursor:pointer;font-size:13px">🔄 Spróbuj ponownie</button>
+      </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
