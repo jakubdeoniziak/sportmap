@@ -40,7 +40,7 @@
     flex-direction: column;
   }
 
-  /* ── TOP BAR ─────────────────────────────────── */
+  /* top bar */
   #topbar {
     height: 56px;
     background: var(--panel);
@@ -120,14 +120,14 @@
     letter-spacing: .5px;
   }
 
-  /* ── MAIN LAYOUT ──────────────────────────────── */
+  /* main layout */
   #main {
     display: flex;
     flex: 1;
     overflow: hidden;
   }
 
-  /* ── SIDEBAR ──────────────────────────────────── */
+  /* sidebar */
   #sidebar {
     width: 320px;
     background: var(--panel);
@@ -268,13 +268,13 @@
   }
   .rating-tag .star { color: #ffd147; }
 
-  /* ── MAP ─────────────────────────────────────── */
+  /* map */
   #map {
     flex: 1;
     z-index: 0;
   }
 
-  /* ── POPUP DETAIL PANEL ───────────────────────── */
+  /* popupy */
   #detail-panel {
     position: absolute;
     bottom: 24px;
@@ -386,7 +386,7 @@
   .btn-primary { background: var(--accent); color: #0d0f14; }
   .btn-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
 
-  /* ── LEAFLET OVERRIDES ───────────────────────── */
+  /* leaflet */
   .leaflet-container { background: #0d0f14; }
   .leaflet-popup-content-wrapper {
     background: var(--panel);
@@ -420,7 +420,7 @@
   }
   .leaflet-control-attribution a { color: var(--muted) !important; }
 
-  /* custom marker */
+  /* markery */
   .map-marker {
     display: flex; align-items: center; justify-content: center;
     border-radius: 50% 50% 50% 0;
@@ -435,14 +435,14 @@
   }
   .map-marker:hover { transform: rotate(-45deg) scale(1.2); }
 
-  /* ── MOBILE ──────────────────────────────────── */
+  /* mobile */
   @media (max-width: 700px) {
     #sidebar { position: absolute; left: 0; top: 56px; bottom: 0; width: 100%; z-index: 600; }
     #sidebar.collapsed { width: 0; }
     #detail-panel { left: 12px; right: 12px; width: auto; bottom: 12px; }
   }
 
-  /* ── TOOLTIP ──────────────────────────────────── */
+  /* tooltip */
   .no-results {
     text-align: center;
     padding: 24px 16px;
@@ -451,7 +451,7 @@
   }
   .no-results span { font-size: 28px; display: block; margin-bottom: 8px; }
 
-  /* ── LEGEND ───────────────────────────────────── */
+  /* legend */
   #legend {
     position: absolute;
     top: 70px;
@@ -480,7 +480,7 @@
   }
   .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-  /* ── LAYER SWITCHER ───────────────────────────── */
+  /* layer-switcher */
   #layer-switcher {
     position: absolute;
     bottom: 32px;
@@ -521,7 +521,7 @@
     background: var(--panel2);
   }
 
-  /* ── GEOPORTAL BADGE ──────────────────────────── */
+  /* geoportal badge */
   #geoportal-badge {
     position: absolute;
     bottom: 32px;
@@ -543,7 +543,7 @@
   #geoportal-badge a:hover { text-decoration: underline; }
   #geoportal-badge.hidden { opacity: 0; pointer-events: none; }
 
-  /* ── LOADING OVERLAY ─────────────────────────── */
+  /* overlay */
   #loading-overlay {
     position: absolute;
     inset: 0;
@@ -567,11 +567,10 @@
 </head>
 <body>
 
-<!-- TOP BAR -->
+<!-- top bar -->
 <div id="topbar">
   <div class="logo">Sport<span>Map</span> <span style="color:var(--muted);font-size:14px;letter-spacing:1px;">OLSZTYN</span></div>
   <div id="search-wrap">
-    <span class="search-icon">🔍</span>
     <input id="search" type="text" placeholder="Szukaj obiektu, adresu…" autocomplete="off">
   </div>
   <div id="topbar-right">
@@ -581,10 +580,10 @@
   </div>
 </div>
 
-<!-- MAIN -->
+<!-- main -->
 <div id="main">
 
-  <!-- LOADING OVERLAY -->
+  <!-- loading overlay -->
   <div id="loading-overlay">
     <div style="text-align:center">
       <div class="spinner"></div>
@@ -592,7 +591,7 @@
     </div>
   </div>
 
-  <!-- SIDEBAR -->
+  <!-- sidebar -->
   <div id="sidebar">
     <div id="filters">
       <div class="filter-label">Filtruj kategorie</div>
@@ -610,15 +609,14 @@
     <div id="place-list"></div>
   </div>
 
-  <!-- MAP -->
+  <!-- map -->
   <div id="map"></div>
 
-  <!-- LAYER SWITCHER -->
+  <!-- layer switcher -->
   <div id="layer-switcher">
-    <button class="layer-btn active" data-layer="dark" title="Ciemna mapa wektorowa">🌑 Mapa</button>
-    <button class="layer-btn" data-layer="orto" title="Ortofotomapa GUGiK (standardowa rozdzielczość)">🛰️ Orto</button>
-    <button class="layer-btn" data-layer="ortohr" title="Ortofotomapa GUGiK (wysoka rozdzielczość)">🔭 Orto HD</button>
-    <button class="layer-btn" data-layer="hybrid" title="Ortofotomapa HD + etykiety OSM">🗺️ Hybryda</button>
+    <button class="layer-btn active" data-layer="dark" title="Ciemna mapa wektorowa">Mapa</button>
+    <button class="layer-btn" data-layer="orto" title="Ortofotomapa GUGiK">Orto</button>
+    <button class="layer-btn" data-layer="hybrid" title="Ortofotomapa HD + etykiety OSM">Hybryda</button>
   </div>
 
   <!-- GEOPORTAL BADGE (widoczny przy warstwach orto) -->
@@ -665,14 +663,13 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ═══════════════════════════════════════════════════
-// KONFIGURACJA SUPABASE
-// Wpisz swoje dane z: supabase.com → Settings → API
+// supabase connection
 // ═══════════════════════════════════════════════════
-const SUPABASE_URL = 'https://qgpnzwarcpwhavwpubgq.supabase.co';   // np. https://abcxyz.supabase.co
-const SUPABASE_KEY = 'sb_publishable_M4sTE6MprLFxKVrKFiHF6A_T2n1hhrs';       // anon / public key
+const SUPABASE_URL = 'https://qgpnzwarcpwhavwpubgq.supabase.co';  
+const SUPABASE_KEY = 'sb_publishable_M4sTE6MprLFxKVrKFiHF6A_T2n1hhrs';       
 
 // ═══════════════════════════════════════════════════
-// MAPOWANIE EMOJI DLA KATEGORII
+// emoji
 // ═══════════════════════════════════════════════════
 const CAT_EMOJI = {
   stadion:  '🏟️',
@@ -684,12 +681,12 @@ const CAT_EMOJI = {
 };
 
 // ═══════════════════════════════════════════════════
-// GLOBALNY STAN — wypełniany po fetch
+// globalny stan
 // ═══════════════════════════════════════════════════
 let PLACES = []
 
 // ═══════════════════════════════════════════════════
-// KONFIGURACJA KATEGORII
+// config kategorii
 // ═══════════════════════════════════════════════════
 const CAT_CONFIG = {
   stadion:  { color: "#ff6b47", label: "Stadion" },
@@ -701,7 +698,7 @@ const CAT_CONFIG = {
 };
 
 // ═══════════════════════════════════════════════════
-// INICJALIZACJA MAPY
+// ini map
 // ═══════════════════════════════════════════════════
 const map = L.map('map', {
   center: [53.770, 20.480],
@@ -710,7 +707,7 @@ const map = L.map('map', {
 });
 
 // ═══════════════════════════════════════════════════
-// WARSTWY PODKŁADOWE
+// warstwy podkładowe
 // ═══════════════════════════════════════════════════
 
 // Warstwa ciemna CartoDB
@@ -738,21 +735,6 @@ const layerOrto = L.tileLayer.wms(
   }
 );
 
-// Ortofotomapa wysokiej rozdzielczości GUGiK
-const layerOrtoHR = L.tileLayer.wms(
-  'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/HighResolution',
-  {
-    layers: 'Raster',
-    format: 'image/jpeg',
-    transparent: false,
-    version: '1.3.0',
-    crs: L.CRS.EPSG3857,
-    attribution: '© <a href="https://www.geoportal.gov.pl/" target="_blank">GUGiK — Geoportal.gov.pl (High Res)</a>',
-    maxZoom: 22,
-    tileSize: 512
-  }
-);
-
 // Etykiety OSM na wierzch (do hybrydy)
 const layerLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
@@ -770,7 +752,7 @@ let hybridOn   = false;
 layerDark.addTo(map);
 
 function switchLayer(name) {
-  [layerDark, layerOrto, layerOrtoHR].forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+  [layerDark, layerOrto].forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
   if (map.hasLayer(layerLabels)) map.removeLayer(layerLabels);
   hybridOn = false;
 
@@ -780,13 +762,8 @@ function switchLayer(name) {
   } else if (name === 'orto') {
     layerOrto.addTo(map);
     activeBase = layerOrto;
-  } else if (name === 'ortohr') {
-    layerOrtoHR.addTo(map);
-    activeBase = layerOrtoHR;
   } else if (name === 'hybrid') {
-    layerOrtoHR.addTo(map);
     layerLabels.addTo(map);
-    activeBase = layerOrtoHR;
     hybridOn = true;
   }
 }
@@ -799,13 +776,13 @@ document.querySelectorAll('.layer-btn').forEach(btn => {
     btn.classList.add('active');
     switchLayer(btn.dataset.layer);
     // Pokaż badge geoportalu przy warstwach orto
-    const isOrto = ['orto','ortohr','hybrid'].includes(btn.dataset.layer);
+    const isOrto = ['orto','hybrid'].includes(btn.dataset.layer);
     geoportalBadge.classList.toggle('hidden', !isOrto);
   });
 });
 
 // ═══════════════════════════════════════════════════
-// MARKERY
+// markery
 // ═══════════════════════════════════════════════════
 function makeIcon(cat) {
   const color = CAT_CONFIG[cat]?.color || "#fff";
@@ -834,7 +811,7 @@ function clearMarkers() {
 }
 
 // ═══════════════════════════════════════════════════
-// PANEL SZCZEGÓŁÓW
+// szczegoly
 // ═══════════════════════════════════════════════════
 const DAYS = ["Niedziela","Poniedziałek","Wtorek","Środa","Czwartek","Piątek","Sobota"];
 let currentPlace = null;
@@ -924,7 +901,7 @@ document.getElementById('close-detail').onclick = () => {
 };
 
 // ═══════════════════════════════════════════════════
-// FILTROWANIE + WYSZUKIWANIE
+// flitrowanie
 // ═══════════════════════════════════════════════════
 let activeFilter = "wszystkie";
 let searchQuery = "";
@@ -1000,7 +977,7 @@ document.getElementById('search').addEventListener('input', e => {
 });
 
 // ═══════════════════════════════════════════════════
-// SIDEBAR TOGGLE
+// sidebar toggle
 // ═══════════════════════════════════════════════════
 document.getElementById('toggle-sidebar').onclick = () => {
   document.getElementById('sidebar').classList.toggle('collapsed');
@@ -1008,7 +985,7 @@ document.getElementById('toggle-sidebar').onclick = () => {
 };
 
 // ═══════════════════════════════════════════════════
-// GEOLOKALIZACJA
+// geolokalizacja
 // ═══════════════════════════════════════════════════
 let userMarker = null;
 document.getElementById('locate-me').onclick = () => {
@@ -1025,8 +1002,8 @@ document.getElementById('locate-me').onclick = () => {
 };
 
 // ═══════════════════════════════════════════════════
-// SUPABASE — normalizacja wiersza z bazy
-// Mapuje nazwy kolumn Supabase → format używany w geoportalu
+// SUPABASE normalizacja wiersza z bazy
+// Mapuje nazwy kolumn Supabase - format używany w geoportalu
 // ═══════════════════════════════════════════════════
 function normalizeRow(row) {
   return {
@@ -1046,7 +1023,7 @@ function normalizeRow(row) {
 }
 
 // ═══════════════════════════════════════════════════
-// SUPABASE — pobieranie danych
+// SUPABASE pobieranie danych
 // ═══════════════════════════════════════════════════
 async function loadFromSupabase() {
   const res = await fetch(
@@ -1064,7 +1041,7 @@ async function loadFromSupabase() {
 }
 
 // ═══════════════════════════════════════════════════
-// INIT — ładowanie danych i uruchomienie mapy
+// INIT ładowanie danych i uruchomienie mapy
 // ═══════════════════════════════════════════════════
 async function init() {
   const loadingEl = document.getElementById('loading-overlay');
