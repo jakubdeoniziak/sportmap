@@ -388,9 +388,6 @@
 
   /* leaflet */
   .leaflet-container { background: #0d0f14; }
-  .dark-map-tiles {
-    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-  }
   .leaflet-popup-content-wrapper {
     background: var(--panel);
     color: var(--text);
@@ -619,7 +616,7 @@
   <div id="layer-switcher">
     <button class="layer-btn active" data-layer="dark" title="Ciemna mapa wektorowa">Mapa</button>
     <button class="layer-btn" data-layer="orto" title="Ortofotomapa GUGiK">Orto</button>
-    <button class="layer-btn" data-layer="hybrid" title="Ortofotomapa HD + etykiety OSM">Hybryda</button>
+    <button class="layer-btn" data-layer="hybrid" title="Ortofotomapa HD + drogi i etykiety">Hybryda</button>
   </div>
 
   <!-- GEOPORTAL BADGE (widoczny przy warstwach orto) -->
@@ -713,17 +710,17 @@ const map = L.map('map', {
 // warstwy podkładowe
 // ═══════════════════════════════════════════════════
 
-// Warstwa ciemna (OpenStreetMap + filtr CSS Dark Mode — bez limitów i bez klucza API)
-// Warstwa ciemna Esri Dark Gray Canvas (bez klucza API, działa też lokalnie z dysku)
+// 1. Warstwa ciemna Esri Dark Gray Canvas (bez klucza API, działa lokalnie i na GitHub Pages)
 const layerDark = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
   {
-    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-    maxZoom: 16
+    attribution: 'Tiles &copy; Esri',
+    maxZoom: 19,
+    maxNativeZoom: 16
   }
 );
 
-// Ortofotomapa GUGiK — WMS StandardResolution (EPSG:3857, bez klucza)
+// 2. Ortofotomapa GUGiK — WMS StandardResolution (EPSG:3857)
 const layerOrto = L.tileLayer.wms(
   'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution',
   {
@@ -734,20 +731,32 @@ const layerOrto = L.tileLayer.wms(
     crs: L.CRS.EPSG3857,
     attribution: '© <a href="https://www.geoportal.gov.pl/" target="_blank">GUGiK — Geoportal.gov.pl</a>',
     maxZoom: 22,
-    tileSize: 512
+    tileSize: 512,
+    zIndex: 1
   }
 );
 
-// Etykiety OSM na wierzch (do hybrydy)
-const layerLabels = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
-  {
-    subdomains: 'abcd',
-    maxZoom: 20,
-    opacity: 0.85,
-    attribution: '© <a href="https://carto.com/">CARTO</a>'
-  }
-);
+// 3. Nakładka hybrydowa (sieć dróg + etykiety Esri z wysokim zIndex, zawsze nad ortofotomapą)
+const layerLabels = L.layerGroup([
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 22,
+      maxNativeZoom: 19,
+      opacity: 0.8,
+      zIndex: 500
+    }
+  ),
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    {
+      attribution: 'Labels &copy; Esri',
+      maxZoom: 22,
+      maxNativeZoom: 19,
+      zIndex: 501
+    }
+  )
+]);
 
 // Aktywna warstwa bazowa + flaga hybrydy
 let activeBase = layerDark;
