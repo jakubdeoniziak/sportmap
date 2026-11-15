@@ -714,12 +714,12 @@ const map = L.map('map', {
 // ═══════════════════════════════════════════════════
 
 // Warstwa ciemna (OpenStreetMap + filtr CSS Dark Mode — bez limitów i bez klucza API)
+// Warstwa ciemna Esri Dark Gray Canvas (bez klucza API, działa też lokalnie z dysku)
 const layerDark = L.tileLayer(
-  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
   {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-    className: 'dark-map-tiles'
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+    maxZoom: 16
   }
 );
 
