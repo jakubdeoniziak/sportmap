@@ -291,7 +291,7 @@
   }
   @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
-    to   { transform: translateY(0);   opacity: 1; }
+    to   { transform: translateY(0);    opacity: 1; }
   }
   #detail-panel.open { display: block; }
 
@@ -388,6 +388,9 @@
 
   /* leaflet */
   .leaflet-container { background: #0d0f14; }
+  .dark-map-tiles {
+    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+  }
   .leaflet-popup-content-wrapper {
     background: var(--panel);
     color: var(--text);
@@ -710,13 +713,13 @@ const map = L.map('map', {
 // warstwy podkładowe
 // ═══════════════════════════════════════════════════
 
-// Warstwa ciemna CartoDB
+// Warstwa ciemna (OpenStreetMap + filtr CSS Dark Mode — bez limitów i bez klucza API)
 const layerDark = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+    className: 'dark-map-tiles'
   }
 );
 
@@ -763,7 +766,9 @@ function switchLayer(name) {
     layerOrto.addTo(map);
     activeBase = layerOrto;
   } else if (name === 'hybrid') {
+    layerOrto.addTo(map);
     layerLabels.addTo(map);
+    activeBase = layerOrto;
     hybridOn = true;
   }
 }
