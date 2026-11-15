@@ -6,7 +6,7 @@ Interaktywna mapa obiektów sportowych miasta Olsztyn. Projekt działa lokalnie 
 
 ##  Demo
 
-**[Otwórz geoportal](https://TWOJA-NAZWA.github.io/sportmap-olsztyn)**
+**[Otwórz geoportal](https://jakubdeoniziak.github.io/sportmap/)**
 
 ---
 
